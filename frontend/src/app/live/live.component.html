@@ -1,0 +1,155 @@
+<div class="studio">
+  <!-- ============ STAGE ============ -->
+  <section class="stage glass rise" [class.live]="recording()">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+
+    <div class="stage-top">
+      <div class="status-pill" [attr.data-s]="rec.status()">
+        <span class="led"></span><span class="mono">{{ statusText() }}</span>
+      </div>
+      <div class="eyebrow">Neural speech recognition · 16 kHz PCM stream</div>
+      <div class="timer mono" [class.on]="recording()">{{ timer() }}</div>
+    </div>
+
+    <div class="orb-wrap">
+      <app-orb-visualizer [active]="recording()" [state]="orbState()" />
+      <button class="mic" [class.on]="recording()" [class.wait]="rec.status() === 'connecting' || rec.status() === 'finishing'"
+              (click)="toggle()" [disabled]="rec.status() === 'connecting' || rec.status() === 'finishing'"
+              [attr.aria-label]="recording() ? 'Stop recording' : 'Start recording'">
+        <span class="ring r1"></span><span class="ring r2"></span>
+        <app-icon [name]="recording() ? 'stop' : 'mic'" [size]="30" />
+      </button>
+      <div class="hint">
+        @switch (rec.status()) {
+          @case ('recording') { Speak freely in Hindi, English or both · <kbd>Space</kbd> to stop }
+          @case ('connecting') { Opening secure audio channel… }
+          @case ('finishing') { Flushing buffers &amp; committing to database… }
+          @default { Tap the core or press <kbd>Space</kbd> to start listening }
+        }
+      </div>
+    </div>
+
+    <div class="scope"><app-wave-visualizer /></div>
+
+    <!-- controls -->
+    <div class="controls">
+      <div class="seg" role="radiogroup" aria-label="Recognition language">
+        @for (l of quickLangs; track l.code) {
+          <button role="radio" [attr.aria-checked]="language() === l.code" [class.sel]="language() === l.code"
+                  [disabled]="busy()" (click)="language.set(l.code)" [title]="l.hint">{{ l.label }}</button>
+        }
+        <select [disabled]="busy()" [class.sel]="!['auto','hi','en'].includes(language())"
+                [ngModel]="['auto','hi','en'].includes(language()) ? '' : language()" (ngModelChange)="$event && language.set($event)">
+          <option value="">MORE…</option>
+          @for (l of moreLangs; track l.code) { <option [value]="l.code">{{ l.label }}</option> }
+        </select>
+      </div>
+      <div class="title-field">
+        <app-icon name="text" [size]="15" />
+        <input [(ngModel)]="title" [disabled]="busy()" placeholder="Session title (optional)" maxlength="200" />
+      </div>
+      <button class="switch" [class.on]="save()" [disabled]="busy()" (click)="save.set(!save())" role="switch" [attr.aria-checked]="save()">
+        <span class="knob"></span> <span>Auto-archive</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ============ TELEMETRY ============ -->
+  <aside class="telemetry">
+    <div class="glass metric rise" style="animation-delay:.05s">
+      <div class="eyebrow"><app-icon name="text" [size]="12" /> Words captured</div>
+      <div class="big grad-text">{{ wordCount() }}</div>
+    </div>
+    <div class="glass metric rise" style="animation-delay:.1s">
+      <div class="eyebrow"><app-icon name="zap" [size]="12" /> Speech rate</div>
+      <div class="big">{{ wpm() }}<small> wpm</small></div>
+      <div class="gauge"><div [style.width.%]="(wpm() / 200) * 100"></div></div>
+    </div>
+    <div class="glass metric rise" style="animation-delay:.15s">
+      <div class="eyebrow"><app-icon name="layers" [size]="12" /> Segments</div>
+      <div class="big">{{ rec.finals().length }}</div>
+    </div>
+    <div class="glass metric rise" style="animation-delay:.2s">
+      <div class="eyebrow"><app-icon name="mic" [size]="12" /> Input level</div>
+      <div class="vu">
+        @for (b of [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]; track b) {
+          <i [class.lit]="rec.level() * 16 > b" [style.--i]="b"></i>
+        }
+      </div>
+    </div>
+    <div class="glass metric wide rise" style="animation-delay:.25s">
+      <div class="eyebrow"><app-icon name="globe" [size]="12" /> Language mix</div>
+      @if (langMix().length) {
+        <div class="mixbar">
+          @for (m of langMix(); track m.code) {
+            <span [style.width.%]="m.pct" [style.background]="m.color" [style.box-shadow]="'0 0 12px ' + m.color"></span>
+          }
+        </div>
+        <div class="legend">
+          @for (m of langMix(); track m.code) {
+            <span><i [style.background]="m.color"></i>{{ m.name }} <b class="mono">{{ m.pct | number: '1.0-0' }}%</b></span>
+          }
+        </div>
+      } @else {
+        <div class="mixbar idle"><span></span></div>
+        <div class="legend muted">Awaiting speech…</div>
+      }
+    </div>
+    <div class="glass metric wide rise" style="animation-delay:.3s">
+      <div class="eyebrow"><app-icon name="cpu" [size]="12" /> Pipeline</div>
+      <ol class="pipeline">
+        <li [class.ok]="busy() || rec.finals().length">Mic · AudioWorklet</li>
+        <li [class.ok]="!!rec.provider()">WebSocket · Gateway</li>
+        <li [class.ok]="!!rec.provider()">ASR · {{ rec.provider() || 'engine' }}</li>
+        <li [class.ok]="!!rec.lastSaved()">PostgreSQL</li>
+      </ol>
+    </div>
+  </aside>
+
+  <!-- ============ TRANSCRIPT STREAM ============ -->
+  <section class="glass transcript rise" style="animation-delay:.15s">
+    <div class="t-head">
+      <div>
+        <div class="eyebrow">Output</div>
+        <h2>Live transcript stream</h2>
+      </div>
+      <div class="t-actions">
+        <button class="btn ghost" (click)="speak()" [disabled]="!lines().length">
+          <app-icon [name]="speech.speakingId() === 'live' ? 'stop' : 'speaker'" /> {{ speech.speakingId() === 'live' ? 'Stop' : 'Read aloud' }}
+        </button>
+        <button class="btn ghost" (click)="copy()" [disabled]="!lines().length">
+          <app-icon [name]="copied() ? 'check' : 'copy'" /> {{ copied() ? 'Copied' : 'Copy' }}
+        </button>
+        <button class="btn ghost" (click)="openArchive()"><app-icon name="history" /> Archive</button>
+      </div>
+    </div>
+
+    <div class="stream" #stream>
+      @if (!lines().length && !rec.partial()) {
+        <div class="empty">
+          <div class="empty-orb"></div>
+          <p>Your words will materialise here in real time.</p>
+          <p class="muted">Try: <i>“Kal ki meeting 10 baje hai, please sab log time pe join karna.”</i></p>
+        </div>
+      }
+      @for (l of lines(); track $index) {
+        <div class="line">
+          <span class="ts mono">{{ fmtTs(l.start) }}</span>
+          <p>
+            @for (w of l.words; track $index) {
+              <span class="w" [style.animation-delay.ms]="$index * 45">{{ w }} </span>
+            }
+          </p>
+          @if (l.language) { <span class="chip" [attr.data-lang]="l.language">{{ langName(l.language) }}</span> }
+        </div>
+      }
+      @if (rec.partial()) {
+        <div class="line partial">
+          <span class="ts mono">LIVE</span>
+          <p><span class="shimmer">{{ rec.partial() }}</span><span class="caret"></span></p>
+          <span class="decoding mono">decoding<i>.</i><i>.</i><i>.</i></span>
+        </div>
+      }
+    </div>
+  </section>
+</div>

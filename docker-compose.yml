@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: stt
+      POSTGRES_PASSWORD: stt
+      POSTGRES_DB: stt
+    volumes: [pgdata:/var/lib/postgresql/data]
+    ports: ["5432:5432"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stt"]
+      interval: 3s
+      retries: 20
+
+  stt:
+    build: ./stt-service
+    environment:
+      STT_PROVIDER: ${STT_PROVIDER:-whisper}          # whisper | gemini | mock
+      WHISPER_MODEL: ${WHISPER_MODEL:-small}          # use "medium"/"large-v3" (+GPU) for best Hinglish accuracy
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-live-2.5-flash-preview}
+    volumes: [models:/models/hf]                       # caches Whisper weights between runs
+    ports: ["8000:8000"]
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgres://stt:stt@db:5432/stt
+      STT_URL: http://stt:8000
+    depends_on:
+      db: { condition: service_healthy }
+      stt: { condition: service_started }
+    ports: ["3000:3000"]
+
+  frontend:
+    build: ./frontend
+    depends_on: [backend]
+    ports: ["8080:80"]
+
+volumes:
+  pgdata:
+  models:
