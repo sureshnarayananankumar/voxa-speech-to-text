@@ -6,7 +6,7 @@ def _env(name: str, default: str) -> str:
     return os.getenv(name, default)
 
 
-# Which speech-to-text engine to use: "whisper" (self-hosted, default), "gemini" or "mock".
+# Which speech-to-text engine to use: "whisper" (self-hosted, default), "openai", "gemini" or "mock".
 STT_PROVIDER = _env("STT_PROVIDER", "whisper").lower()
 
 # --- faster-whisper (open source, self-hosted) ---
@@ -19,6 +19,11 @@ WHISPER_INITIAL_PROMPT = _env(
     "WHISPER_INITIAL_PROMPT",
     "Hello, aap kaise ho? Main theek hoon. Let's start the meeting. नमस्ते, कैसे हैं आप?",
 )
+
+# --- OpenAI transcription API (cloud) ---
+OPENAI_API_KEY = _env("OPENAI_API_KEY", "")
+OPENAI_MODEL = _env("OPENAI_MODEL", "gpt-4o-transcribe")                # used for final results
+OPENAI_PARTIAL_MODEL = _env("OPENAI_PARTIAL_MODEL", "gpt-4o-mini-transcribe")  # live partials; "" disables
 
 # --- Gemini Live (Google, free tier API) ---
 GEMINI_API_KEY = _env("GEMINI_API_KEY", "")

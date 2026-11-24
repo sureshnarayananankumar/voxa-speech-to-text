@@ -205,4 +205,4 @@ docker-compose.yml
 2. When Render asks for env values, `GEMINI_API_KEY` is optional. Set it only if you switch `STT_PROVIDER` to `gemini`.
 3. If Render gives a service a different URL than `https://<name>.onrender.com`, update `STT_URL` on `voxa-backend` and `BACKEND_URL` on `voxa` to match.
 
-The free instance has 512 MB of RAM, so the cloud STT uses Whisper `tiny`. Free services also sleep when idle, so the first request after a pause can take about a minute.
+The free instance has only a fraction of a CPU, which is too slow for local Whisper, so the cloud deployment uses the OpenAI transcription API (`STT_PROVIDER=openai`, `gpt-4o-transcribe` for final text and `gpt-4o-mini-transcribe` for live partials). Set `OPENAI_API_KEY` on `voxa-stt` in the Render dashboard. Free services also sleep when idle, so the first request after a pause can take about a minute.

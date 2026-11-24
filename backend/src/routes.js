@@ -1,6 +1,7 @@
 const express = require('express');
 const repo = require('./repository');
 const { sttUrl } = require('./config');
+const { pool } = require('./db');
 
 const router = express.Router();
 
@@ -91,8 +92,11 @@ router.post('/tts', wrap(async (req, res) => {
 }));
 
 router.get('/health', wrap(async (_req, res) => {
-  const stt = await fetch(`${sttUrl}/health`).then((r) => r.json()).catch(() => ({ status: 'down' }));
-  res.json({ status: 'ok', stt });
+  const [stt, db] = await Promise.all([
+    fetch(`${sttUrl}/health`).then((r) => r.json()).catch(() => ({ status: 'down' })),
+    pool.query('SELECT 1').then(() => ({ status: 'ok' })).catch((e) => ({ status: 'down', error: e.code || e.message })),
+  ]);
+  res.json({ status: 'ok', stt, db });
 }));
 
 module.exports = { router, HttpError };

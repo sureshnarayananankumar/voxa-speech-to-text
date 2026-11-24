@@ -101,7 +101,7 @@
         <li [class.ok]="busy() || rec.finals().length">Mic · AudioWorklet</li>
         <li [class.ok]="!!rec.provider()">WebSocket · Gateway</li>
         <li [class.ok]="!!rec.provider()">ASR · {{ rec.provider() || 'engine' }}</li>
-        <li [class.ok]="!!rec.lastSaved()">PostgreSQL</li>
+        <li [class.ok]="dbOnline() || !!rec.lastSaved()">PostgreSQL</li>
       </ol>
     </div>
   </aside>

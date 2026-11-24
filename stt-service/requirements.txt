@@ -4,3 +4,4 @@ numpy>=1.26
 faster-whisper>=1.0
 google-genai>=1.20
 piper-tts>=1.2
+openai>=1.40

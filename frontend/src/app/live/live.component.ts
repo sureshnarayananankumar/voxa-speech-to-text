@@ -1,6 +1,7 @@
 import { Component, ElementRef, HostListener, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { DecimalPipe } from '@angular/common';
 import { RecorderService } from '../services/recorder.service';
 import { SpeechService } from '../services/speech.service';
@@ -24,6 +25,9 @@ export class LiveComponent {
   speech = inject(SpeechService);
   private toast = inject(ToastService);
   private router = inject(Router);
+  private http = inject(HttpClient);
+  /** Live PostgreSQL connectivity, from the backend's /api/health. */
+  dbOnline = signal(false);
   private stream = viewChild<ElementRef<HTMLElement>>('stream');
 
   quickLangs = [
@@ -71,6 +75,10 @@ export class LiveComponent {
   })[this.rec.status()]);
 
   constructor() {
+    this.http.get<{ db?: { status: string } }>('/api/health').subscribe({
+      next: (h) => this.dbOnline.set(h.db?.status === 'ok'),
+      error: () => this.dbOnline.set(false),
+    });
     // keep the newest words in view
     effect(() => {
       this.rec.finals(); this.rec.partial();

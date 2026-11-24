@@ -10,7 +10,10 @@ def build_provider() -> STTProvider:
     if name == "gemini":
         from .gemini_provider import GeminiProvider
         return GeminiProvider()
+    if name == "openai":
+        from .openai_provider import OpenAIProvider
+        return OpenAIProvider()
     if name == "mock":
         from .mock_provider import MockProvider
         return MockProvider()
-    raise ValueError(f"Unknown STT_PROVIDER '{name}' (expected whisper | gemini | mock)")
+    raise ValueError(f"Unknown STT_PROVIDER '{name}' (expected whisper | openai | gemini | mock)")

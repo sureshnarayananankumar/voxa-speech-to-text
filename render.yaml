@@ -15,9 +15,11 @@ services:
     healthCheckPath: /health
     envVars:
       - key: STT_PROVIDER
-        value: whisper          # whisper | gemini | mock
+        value: openai           # openai (cloud, fast on free CPU) | whisper (self-hosted) | gemini | mock
+      - key: OPENAI_API_KEY
+        sync: false             # set in the Render dashboard
       - key: WHISPER_MODEL
-        value: tiny             # fits the free 512 MB instance; use small/medium on bigger plans
+        value: tiny             # only used when STT_PROVIDER=whisper
       - key: GEMINI_API_KEY
         sync: false             # optional: set in the Render dashboard if STT_PROVIDER=gemini
 
