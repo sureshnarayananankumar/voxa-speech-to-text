@@ -2,6 +2,7 @@ const express = require('express');
 const repo = require('./repository');
 const { sttUrl } = require('./config');
 const { pool } = require('./db');
+const { dominantLanguage } = require('./ws-gateway');
 
 const router = express.Router();
 
@@ -55,8 +56,23 @@ router.get('/transcriptions/:id', wrap(async (req, res) => {
 }));
 
 router.post('/transcriptions', wrap(async (req, res) => {
-  const data = validateBody(req.body || {});
-  res.status(201).json(await repo.create({ ...data, provider: 'manual' }));
+  const body = req.body || {};
+  const data = validateBody(body);
+  // Sessions recognised in the browser (Web Speech API) arrive here with their segments.
+  const provider = body.provider === 'browser' ? 'browser' : 'manual';
+  const segments = Array.isArray(body.segments)
+    ? body.segments.slice(0, 5000)
+      .filter((x) => x && typeof x.text === 'string' && x.text.trim())
+      .map((x) => ({
+        text: x.text.trim().slice(0, 5000),
+        language: typeof x.language === 'string' ? x.language.slice(0, 20) : null,
+        start: Number(x.start) || 0,
+        end: Number(x.end) || 0,
+      }))
+    : [];
+  const duration = Math.max(0, Math.min(Number(body.duration_sec) || 0, 86400));
+  if (!data.language && segments.length) data.language = dominantLanguage(segments);
+  res.status(201).json(await repo.create({ ...data, provider, segments, duration_sec: duration }));
 }));
 
 const updateHandler = (partial) => wrap(async (req, res) => {

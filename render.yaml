@@ -15,7 +15,7 @@ services:
     healthCheckPath: /health
     envVars:
       - key: STT_PROVIDER
-        value: openai           # openai (cloud, fast on free CPU) | whisper (self-hosted) | gemini | mock
+        value: browser          # browser (Chrome/Edge Web Speech, no key) | openai (needs OPENAI_API_KEY) | whisper | gemini | mock
       - key: OPENAI_API_KEY
         sync: false             # set in the Render dashboard
       - key: WHISPER_MODEL
