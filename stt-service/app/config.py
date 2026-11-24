@@ -22,6 +22,9 @@ WHISPER_INITIAL_PROMPT = _env(
 
 # --- OpenAI transcription API (cloud) ---
 OPENAI_API_KEY = _env("OPENAI_API_KEY", "")
+# Any OpenAI-compatible endpoint works, e.g. Groq's free tier: https://api.groq.com/openai/v1
+# (then use OPENAI_MODEL=whisper-large-v3-turbo and OPENAI_PARTIAL_MODEL=whisper-large-v3-turbo).
+OPENAI_BASE_URL = _env("OPENAI_BASE_URL", "") or None
 OPENAI_MODEL = _env("OPENAI_MODEL", "gpt-4o-transcribe")                # used for final results
 OPENAI_PARTIAL_MODEL = _env("OPENAI_PARTIAL_MODEL", "gpt-4o-mini-transcribe")  # live partials; "" disables
 

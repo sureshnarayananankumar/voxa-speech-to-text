@@ -53,7 +53,7 @@ class OpenAIProvider(STTProvider):
             raise RuntimeError("OPENAI_API_KEY is not set (required for STT_PROVIDER=openai)")
         from openai import OpenAI
 
-        self.client = OpenAI(api_key=config.OPENAI_API_KEY, timeout=30)
+        self.client = OpenAI(api_key=config.OPENAI_API_KEY, base_url=config.OPENAI_BASE_URL, timeout=30)
         log.info("OpenAI STT ready (final=%s, partial=%s)", config.OPENAI_MODEL, config.OPENAI_PARTIAL_MODEL)
 
     def create_session(self, emit: EmitFn, language: Optional[str] = None) -> STTSession:
