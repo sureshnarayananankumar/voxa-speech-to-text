@@ -42,4 +42,4 @@ services:
     rootDir: frontend
     envVars:
       - key: BACKEND_URL
-        value: https://voxa-backend.onrender.com
+        value: https://voxa-backend-lntg.onrender.com
